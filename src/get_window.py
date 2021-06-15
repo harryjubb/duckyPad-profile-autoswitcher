@@ -1,5 +1,6 @@
 import time
 import platform
+from pprint import pprint
 
 p = platform.system()
 
@@ -26,11 +27,25 @@ def get_list_of_all_windows():
     raise 'Platform %s not supported' % p
 
 def darwin_get_active_window():
-    windows = Quartz.CGWindowListCopyWindowInfo(
-        Quartz.kCGWindowListExcludeDesktopElements | Quartz.kCGWindowListOptionOnScreenOnly, Quartz.kCGNullWindowID)
-    for window in windows:
-        if window[Quartz.kCGWindowLayer] == 0:
-            return window[Quartz.kCGWindowOwnerName], window.get(Quartz.kCGWindowName, 'unknown')
+    # print(dir(NSWorkspace))
+    # print(dir(NSWorkspace.sharedWorkspace()))
+    # print(type(NSWorkspace.sharedWorkspace().activeApplication()))
+    # print(dir(NSWorkspace.sharedWorkspace().activeApplication()))
+    # print(type(NSWorkspace.sharedWorkspace().frontmostApplication()))
+    # print(dir(NSWorkspace.sharedWorkspace().frontmostApplication()))
+    # exit(1)
+    
+    active_application = NSWorkspace.sharedWorkspace().frontmostApplication()
+    print(type(active_application))
+    pprint(dir(active_application))
+
+    return active_application.localizedName(), ""
+    
+    # windows = Quartz.CGWindowListCopyWindowInfo(
+    #     Quartz.kCGWindowListExcludeDesktopElements | Quartz.kCGWindowListOptionOnScreenOnly, Quartz.kCGNullWindowID)
+    # for window in windows:
+    #     if window[Quartz.kCGWindowLayer] == 0:
+    #         return window[Quartz.kCGWindowOwnerName], NSWorkspace.sharedWorkspace().activeApplication()['NSApplicationName']
     return '', ''
 
 def darwin_get_list_of_all_windows():
