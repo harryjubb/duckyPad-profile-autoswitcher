@@ -26,20 +26,24 @@ def get_list_of_all_windows():
         return darwin_get_list_of_all_windows()
     raise 'Platform %s not supported' % p
 
-def darwin_get_active_window():
+def darwin_run_applescript(script):
     process = subprocess.Popen('osascript -', stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+    stdout, stderr = process.communicate(script)
+
+    print(stdout, stderr)
+
+def darwin_get_active_window():
     script = """
     tell application "System Events"
         set frontproc to first application process whose frontmost is true
         set appName to name of frontproc
         set appFileName to name of file of frontproc
-        set winName to name of window 1 of frontproc
+        set winName to name of front window of frontproc
         return {appFileName, appName, winName}
     end tell
     """.encode('utf-8')
-    stdout, stderr = process.communicate(script)
 
-    print(stdout, stderr)
+    darwin_run_applescript(script)
 
     # import time
     # t0 = time.time()
