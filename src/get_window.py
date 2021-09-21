@@ -34,23 +34,29 @@ def darwin_run_applescript(script):
 
 def darwin_get_active_window():
 
+    print()
     print('called darwin_get_active_window')
 
-    windows = Quartz.CGWindowListCopyWindowInfo(
-        Quartz.kCGWindowListExcludeDesktopElements | Quartz.kCGWindowListOptionOnScreenOnly, Quartz.kCGNullWindowID)
-    for window in windows:
-        if window[Quartz.kCGWindowLayer] == 0:
-            active_window = (window[Quartz.kCGWindowOwnerName], window.get(Quartz.kCGWindowName, 'unknown'))
-            print(active_window)
-            print(active_window[0])
-            print(active_window[1])
-            print(type(active_window[1]))
-            print(str(active_window[1]))
-            if str(active_window[1]) != 'unknown':
-            print('returning')
-                return active_window
+    app = NSWorkspace.sharedWorkspace().frontmostApplication()
+    active_app_name = app.localizedName()
 
-    print('running applescript')
+    windows = Quartz.CGWindowListCopyWindowInfo(
+        Quartz.kCGWindowListExcludeDesktopElements | Quartz.kCGWindowListOptionOnScreenOnly,
+        Quartz.kCGNullWindowID
+    )
+    
+    for window in windows:
+
+        window_owner_name = window[Quartz.kCGWindowOwnerName]
+        window_title = str(window.get(Quartz.kCGWindowName, 'unknown'))
+
+        if window_owner_name == active_app_name and window_title != 'unknown':
+            active_window = (window_owner_name, window_title)
+            print('active_window is', active_window)
+            print('returning')
+            return active_window
+
+    print('no quartz window found, running applescript')
 
     script = """
     tell application "System Events"
