@@ -42,8 +42,15 @@ def darwin_get_active_window():
         if window[Quartz.kCGWindowLayer] == 0:
             active_window = (window[Quartz.kCGWindowOwnerName], window.get(Quartz.kCGWindowName, 'unknown'))
             print(active_window)
-            if active_window[1] != 'unknown':
+            print(active_window[0])
+            print(active_window[1])
+            print(type(active_window[1]))
+            print(str(active_window[1]))
+            if str(active_window[1]) != 'unknown':
+            print('returning')
                 return active_window
+
+    print('running applescript')
 
     script = """
     tell application "System Events"
