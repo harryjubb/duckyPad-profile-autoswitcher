@@ -8,6 +8,7 @@ if p == 'Windows':
     import win32process
     import pygetwindow as gw
 elif p == 'Darwin':
+    import subprocess
     from AppKit import NSWorkspace
     import Quartz
 
@@ -26,6 +27,47 @@ def get_list_of_all_windows():
     raise 'Platform %s not supported' % p
 
 def darwin_get_active_window():
+    process = subprocess.Popen('osascript -', stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+    script = """
+    tell application "System Events"
+        set frontproc to first application process whose frontmost is true
+        set appName to name of frontproc
+        set appFileName to name of file of frontproc
+        set winName to name of window 1 of frontproc
+        return {appFileName, appName, winName}
+    end tell
+    """.encode('utf-8')
+    stdout, stderr = process.communicate(script)
+
+    print(stdout, stderr)
+
+    # import time
+    # t0 = time.time()
+    # script = applescript.run("""
+    # tell application "System Events"
+    #     set frontproc to first application process whose frontmost is true
+    #     set appFileName to name of file of frontproc
+    #     set winName to name of window 1 of frontproc
+    #     return {appFileName, winName}
+    # end tell
+    # """)
+    # t1 = time.time()
+    # td = t1 - t0
+    # print('time:', td)
+
+    # print(script)
+    # print(dir(script))
+    # print(script.out)
+    # print(type(script.out))
+
+    # window_data = script.out.split(", ")
+
+    # if len(window_data) == 2:
+    #     return window_data[0], window_data[1]
+    
+    # return '', ''
+
+
     windows = Quartz.CGWindowListCopyWindowInfo(
         Quartz.kCGWindowListExcludeDesktopElements | Quartz.kCGWindowListOptionOnScreenOnly, Quartz.kCGNullWindowID)
     for window in windows:
