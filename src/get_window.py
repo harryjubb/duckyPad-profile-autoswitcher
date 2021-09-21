@@ -37,13 +37,14 @@ def darwin_get_active_window():
     tell application "System Events"
         set frontproc to first application process whose frontmost is true
         set appName to name of frontproc
+        set appDisplayedName to displayed name of frontproc
         set appFileName to name of file of frontproc
-        if has scripting terminology of frontproc and (exists (front window of frontproc)) then
+        if visible of frontproc and has scripting terminology of frontproc and (exists (front window of frontproc)) then
             set winName to name of front window of frontproc
         else
             set winName to "Unknown"
         end if
-        return {appFileName, appName, winName}
+        return {appFileName, appName, appDisplayedName, winName}
     end tell
     """.encode('utf-8')
 
