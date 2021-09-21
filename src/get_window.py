@@ -33,6 +33,18 @@ def darwin_run_applescript(script):
     print(stdout, stderr)
 
 def darwin_get_active_window():
+
+    print('called darwin_get_active_window')
+
+    windows = Quartz.CGWindowListCopyWindowInfo(
+        Quartz.kCGWindowListExcludeDesktopElements | Quartz.kCGWindowListOptionOnScreenOnly, Quartz.kCGNullWindowID)
+    for window in windows:
+        if window[Quartz.kCGWindowLayer] == 0:
+            active_window = (window[Quartz.kCGWindowOwnerName], window.get(Quartz.kCGWindowName, 'unknown'))
+            print(active_window)
+            if active_window[1] != 'unknown':
+                return active_window
+
     script = """
     tell application "System Events"
         set frontproc to first application process whose frontmost is true
@@ -42,7 +54,7 @@ def darwin_get_active_window():
         if visible of frontproc and has scripting terminology of frontproc and (exists (front window of frontproc)) then
             set winName to name of front window of frontproc
         else
-            set winName to "Unknown"
+            set winName to "unknown"
         end if
         return {appFileName, appName, appDisplayedName, winName}
     end tell
@@ -50,38 +62,6 @@ def darwin_get_active_window():
 
     darwin_run_applescript(script)
 
-    # import time
-    # t0 = time.time()
-    # script = applescript.run("""
-    # tell application "System Events"
-    #     set frontproc to first application process whose frontmost is true
-    #     set appFileName to name of file of frontproc
-    #     set winName to name of window 1 of frontproc
-    #     return {appFileName, winName}
-    # end tell
-    # """)
-    # t1 = time.time()
-    # td = t1 - t0
-    # print('time:', td)
-
-    # print(script)
-    # print(dir(script))
-    # print(script.out)
-    # print(type(script.out))
-
-    # window_data = script.out.split(", ")
-
-    # if len(window_data) == 2:
-    #     return window_data[0], window_data[1]
-    
-    # return '', ''
-
-
-    windows = Quartz.CGWindowListCopyWindowInfo(
-        Quartz.kCGWindowListExcludeDesktopElements | Quartz.kCGWindowListOptionOnScreenOnly, Quartz.kCGNullWindowID)
-    for window in windows:
-        if window[Quartz.kCGWindowLayer] == 0:
-            return window[Quartz.kCGWindowOwnerName], window.get(Quartz.kCGWindowName, 'unknown')
     return '', ''
 
 def darwin_get_list_of_all_windows():
