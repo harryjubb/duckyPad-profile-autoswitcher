@@ -30,52 +30,71 @@ def darwin_run_applescript(script):
     process = subprocess.Popen('osascript -', stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     stdout, stderr = process.communicate(script)
 
-    print(stdout, stderr)
+    return stdout.decode('utf-8'), stderr.decode('utf-8')
+
+def darwin_parse_applescript_output(output):
+    return [item.strip() for item in output.strip().split(', ')]
 
 def darwin_get_active_window():
 
     print()
     print('called darwin_get_active_window')
 
+    # https://stackoverflow.com/a/44229825/1108828
     app = NSWorkspace.sharedWorkspace().frontmostApplication()
     active_app_name = app.localizedName()
+    active_app_pid = NSWorkspace.sharedWorkspace().activeApplication()['NSApplicationProcessIdentifier']
 
     windows = Quartz.CGWindowListCopyWindowInfo(
         Quartz.kCGWindowListExcludeDesktopElements | Quartz.kCGWindowListOptionOnScreenOnly,
         Quartz.kCGNullWindowID
     )
-    
+
     for window in windows:
 
+        window_pid = window[Quartz.kCGWindowOwnerPID]
         window_owner_name = window[Quartz.kCGWindowOwnerName]
         window_title = str(window.get(Quartz.kCGWindowName, 'unknown'))
 
-        if window_owner_name == active_app_name and window_title != 'unknown':
+        if (
+            window_owner_name == active_app_name and
+            window_pid == active_app_pid and
+            window_title != 'unknown'
+        ):
             active_window = (window_owner_name, window_title)
             print('active_window is', active_window)
             print('returning')
             return active_window
+        elif (
+            window_owner_name == active_app_name and
+            window_pid == active_app_pid
+        ):
+            print('active window has title', window_title)
+
 
     print('no quartz window found, running applescript')
 
     script = """
     tell application "System Events"
         set frontproc to first application process whose frontmost is true
-        set appName to name of frontproc
         set appDisplayedName to displayed name of frontproc
-        set appFileName to name of file of frontproc
-        if visible of frontproc and has scripting terminology of frontproc and (exists (front window of frontproc)) then
+        if exists (front window of frontproc) then
             set winName to name of front window of frontproc
         else
             set winName to "unknown"
         end if
-        return {appFileName, appName, appDisplayedName, winName}
+        return {appDisplayedName, winName}
     end tell
     """.encode('utf-8')
 
-    darwin_run_applescript(script)
+    active_window = tuple(
+        darwin_parse_applescript_output(
+            darwin_run_applescript(script)[0]
+        )
+    )
 
-    return '', ''
+    print(active_window)
+    return active_window
 
 def darwin_get_list_of_all_windows():
     apps = []
