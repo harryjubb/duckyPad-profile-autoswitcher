@@ -38,7 +38,7 @@ def darwin_get_active_window():
         set frontproc to first application process whose frontmost is true
         set appName to name of frontproc
         set appFileName to name of file of frontproc
-        if exists (front window of frontproc) then
+        if has scripting terminology of frontproc and (exists (front window of frontproc)) then
             set winName to name of front window of frontproc
         else
             set winName to "Unknown"
