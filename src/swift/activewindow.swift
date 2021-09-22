@@ -75,14 +75,8 @@ for window in windows {
     let windowTitle = window[kCGWindowName as String] as? String ?? "unknown"
     
     let output: [String: Any] = [
-        "title": windowTitle,
-        "id": window[kCGWindowNumber as String] as! Int, // Documented to always exist.
-        "owner": [
-            "name": appName,
-            "processId": windowOwnerPID,
-            "bundleId": app.bundleIdentifier ?? "nobundleid", // I don't think this could happen, but we also don't want to crash.
-            "path": app.bundleURL?.path ?? "nopath" // I don't think this could happen, but we also don't want to crash.
-        ]
+        "app_name": appName,
+        "window_title": windowTitle,
     ]
     
     guard let string = try? toJson(output) else {
