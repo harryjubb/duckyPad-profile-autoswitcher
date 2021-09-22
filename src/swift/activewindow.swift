@@ -11,37 +11,40 @@ func toJson<T>(_ data: T) throws -> String {
     return String(data: json, encoding: .utf8)!
 }
 
-// Show the system prompt if there's no permission.
-func hasScreenRecordingPermission() -> Bool {
-    CGDisplayStream(
-        dispatchQueueDisplay: CGMainDisplayID(),
-        outputWidth: 1,
-        outputHeight: 1,
-        pixelFormat: Int32(kCVPixelFormatType_32BGRA),
-        properties: nil,
-        queue: DispatchQueue.global(),
-        handler: { _, _, _, _ in }
-    ) != nil
+func showErrorAndExit(error: String) -> Void {
+    print("{\"error\": \"\(error)\"}")
+    exit(1)
 }
 
+// Show the system prompt if there's no permission.
+let hasScreenRecordingPermission = CGDisplayStream(
+    dispatchQueueDisplay: CGMainDisplayID(),
+    outputWidth: 1,
+    outputHeight: 1,
+    pixelFormat: Int32(kCVPixelFormatType_32BGRA),
+    properties: nil,
+    queue: DispatchQueue.global(),
+    handler: { _, _, _, _ in }
+) != nil
+
+let hasAccessibilityPermission = AXIsProcessTrustedWithOptions(["AXTrustedCheckOptionPrompt": true] as CFDictionary)
+
 // Show accessibility permission prompt if needed. Required to get the complete window title.
-if !AXIsProcessTrustedWithOptions(["AXTrustedCheckOptionPrompt": true] as CFDictionary) {
-    print("active-win requires the accessibility permission in “System Preferences › Security & Privacy › Privacy › Accessibility”.")
-    exit(1)
+if !hasAccessibilityPermission {
+    showErrorAndExit(error: "Listing window details requires the accessibility permission in “System Preferences › Security & Privacy › Privacy › Accessibility”.")
 }
 
 // Show screen recording permission prompt if needed. Required to get the complete window title.
-if !hasScreenRecordingPermission() {
-    print("active-win requires the screen recording permission in “System Preferences › Security & Privacy › Privacy › Screen Recording”.")
-    exit(1)
+if !hasScreenRecordingPermission {
+    showErrorAndExit(error: "Listing window details requires the screen recording permission in “System Preferences › Security & Privacy › Privacy › Screen Recording”.")
 }
 
 guard
     let frontmostAppPID = NSWorkspace.shared.frontmostApplication?.processIdentifier,
     let windows = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID) as? [[String: Any]]
 else {
-    print("No windows found")
-    exit(0)
+    showErrorAndExit(error: "No windows found")
+    exit(1)
 }
 
 for window in windows {
@@ -56,6 +59,7 @@ for window in windows {
     }
 
     let bounds = CGRect(dictionaryRepresentation: window[kCGWindowBounds as String] as! CFDictionary)! // Documented to always exist.
+    
     // Skip tiny windows, like the Chrome link hover statusbar.
     let minWinSize: CGFloat = 50
     if bounds.width < minWinSize || bounds.height < minWinSize {
@@ -67,12 +71,10 @@ for window in windows {
         continue
     }
     
-    let appName = window[kCGWindowOwnerName as String] as? String ?? app.bundleIdentifier ?? "<Unknown>"
-    
+    let appName = window[kCGWindowOwnerName as String] as? String ?? app.bundleIdentifier ?? "Unknown"
     let windowTitle = window[kCGWindowName as String] as? String ?? "unknown"
     
-    
-    var output: [String: Any] = [
+    let output: [String: Any] = [
         "title": windowTitle,
         "id": window[kCGWindowNumber as String] as! Int, // Documented to always exist.
         "owner": [
@@ -84,6 +86,7 @@ for window in windows {
     ]
     
     guard let string = try? toJson(output) else {
+        showErrorAndExit(error: "Unable to convert output to JSON")
         exit(1)
     }
     
