@@ -8,6 +8,7 @@ if p == 'Windows':
     import win32process
     import pygetwindow as gw
 elif p == 'Darwin':
+    import json
     import subprocess
     from AppKit import NSWorkspace
     import Quartz
@@ -32,8 +33,12 @@ def darwin_run_applescript(script):
 
     return stdout.decode('utf-8'), stderr.decode('utf-8')
 
-def darwin_parse_applescript_output(output):
-    return [item.strip() for item in output.strip().split(', ')]
+def darwin_get_active_window_native():
+    return json.loads(subprocess.check_output(
+        "./swift/activewindow",
+        stderr=subprocess.STDOUT,
+        shell=True
+    ))
 
 def darwin_get_active_window():
 
@@ -72,28 +77,14 @@ def darwin_get_active_window():
             print('active window has title', window_title)
 
 
-    print('no quartz window found, running applescript')
+    print('no quartz window found, running window listing app')
 
-    script = """
-    tell application "System Events"
-        set frontproc to first application process whose frontmost is true
-        set appDisplayedName to displayed name of frontproc
-        if exists (front window of frontproc) then
-            set winName to name of front window of frontproc
-        else
-            set winName to "unknown"
-        end if
-        return {appDisplayedName, winName}
-    end tell
-    """.encode('utf-8')
-
-    active_window = tuple(
-        darwin_parse_applescript_output(
-            darwin_run_applescript(script)[0]
-        )
-    )
-
+    active_window = darwin_get_active_window_native()
     print(active_window)
+    
+    if "error" not in active_window:
+        return active_window['app_name'], active_window['window_title']
+
     return active_window
 
 def darwin_get_list_of_all_windows():
